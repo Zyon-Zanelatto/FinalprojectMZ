@@ -87,12 +87,6 @@ References
 
 ChatGPT - Currency Converter Code. (2025). ChatGPT. https://chatgpt.com/share/67c64f19-eea8-8005-92c7-b836c7fdb3ad 
 
-(ChatGPT - Currency Converter Code, 2025) 
-
- 
-
 ExchangeRate-API - Free & Pro Currency Converter API. (n.d.). Www.exchangerate-Api.com. https://www.exchangerate-api.com 
-
-(ExchangeRate-API - Free & pro Currency Converter API, n.d.) 
 
  
