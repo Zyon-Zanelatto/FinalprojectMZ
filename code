@@ -1,0 +1,162 @@
+#project.py
+
+import requests
+from flask import Flask, render_template_string, request
+
+app = Flask(_name_)
+
+# Function to fetch exchange rates from the API
+def get_exchange_rates():
+    """Fetch exchange rates from an API"""
+    response = requests.get("https://api.exchangerate-api.com/v4/latest/USD")
+    return response.json().get("rates", {})
+
+# Function to convert currency
+def convert_currency(amount, from_currency, to_currency):
+    """Convert currency from one to another"""
+    rates = get_exchange_rates()
+    amount_in_usd = amount / rates.get(from_currency, 1) if from_currency != "USD" else amount
+    return round(amount_in_usd * rates.get(to_currency, 1), 2)
+
+# Function to validate currency codes
+def validate_currency_code(currency_code):
+    """Ensure the currency code is valid by checking against the API's available codes"""
+    rates = get_exchange_rates()  # Fetch the exchange rates from the API
+    return currency_code.upper() in rates
+
+# Function to convert amount to USD if necessary
+def convert_to_usd(amount, from_currency):
+    """Convert the amount to USD if necessary"""
+    rates = get_exchange_rates()
+    if from_currency != "USD":
+        return amount / rates.get(from_currency, 1)
+    return amount
+
+# Function to get conversion result message
+def get_conversion_message(amount, from_currency, to_currency, converted_amount):
+    """Generate a formatted message for the conversion result"""
+    return f"{amount} {from_currency} = {converted_amount} {to_currency}"
+
+# Main route to handle user input and display results
+@app.route("/", methods=["GET", "POST"])
+def home():
+    result = ""
+    if request.method == "POST":
+        try:
+            amount = float(request.form["amount"])
+            from_currency = request.form["from_currency"].upper()
+            to_currency = request.form["to_currency"].upper()
+
+            if not validate_currency_code(from_currency) or not validate_currency_code(to_currency):
+                result = "Invalid currency code. Please try again."
+            else:
+                amount_in_usd = convert_to_usd(amount, from_currency)
+                converted_amount = convert_currency(amount_in_usd, from_currency, to_currency)
+                result = get_conversion_message(amount, from_currency, to_currency, converted_amount)
+
+        except ValueError:
+            result = "Invalid input. Please enter a valid number."
+        except KeyError:
+            result = "Error in currency conversion. Please try again."
+
+    # HTML template with simple styling
+    html_template = """
+    <html>
+    <head>
+        <title>Live Currency Converter</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f0f8ff;
+                color: #333;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                flex-direction: column;
+            }
+            h2 {
+                font-size: 36px;
+                color: #2575fc;
+                margin-bottom: 20px;
+            }
+            form {
+                background-color: #fff;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                width: 300px;
+                text-align: center;
+            }
+            input[type="text"] {
+                padding: 10px;
+                margin: 10px;
+                width: 80%;
+                border-radius: 5px;
+                border: 1px solid #ccc;
+            }
+            input[type="submit"] {
+                background-color: #2575fc;
+                color: white;
+                padding: 12px 24px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+            input[type="submit"]:hover {
+                background-color: #6a11cb;
+            }
+            h3 {
+                margin-top: 20px;
+                font-size: 24px;
+                color: #2575fc;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Live Currency Converter</h2>
+        <form method="POST">
+            Amount: <input type="text" name="amount" required><br><br>
+            From Currency (e.g., USD, EUR, INR): <input type="text" name="from_currency" required><br><br>
+            To Currency (e.g., USD, EUR, INR): <input type="text" name="to_currency" required><br><br>
+            <input type="submit" value="Convert">
+        </form>
+        <h3>{{ result }}</h3>
+    </body>
+    </html>
+    """
+    
+    return render_template_string(html_template, result=result)
+
+if _name_ == "_main_":
+    app.run(debug=True)
+
+
+#requirements.txt
+
+Flask
+requests
+pytest
+
+
+# test_project.py
+
+import pytest
+from project import get_exchange_rates, convert_currency
+
+def test_get_exchange_rates():
+    """Tests if exchange rates are fetched correctly."""
+    rates = get_exchange_rates()
+    assert isinstance(rates, dict)
+    assert "USD" in rates
+
+def test_convert_currency_valid():
+    """Tests valid currency conversion."""
+    result = convert_currency(100, "USD", "EUR")
+    assert isinstance(result, float)
+
+def test_convert_currency_invalid():
+    """Tests invalid currency conversion."""
+    result = convert_currency(100, "XXX", "YYY")
+    assert result is None
